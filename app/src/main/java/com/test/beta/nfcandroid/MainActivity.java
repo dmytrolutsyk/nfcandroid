@@ -1,6 +1,7 @@
 package com.test.beta.nfcandroid;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
@@ -13,78 +14,62 @@ import android.nfc.cardemulation.HostApduService;
 import android.nfc.tech.IsoDep;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
-@RequiresApi(api = Build.VERSION_CODES.KITKAT)
-public class MainActivity extends AppCompatActivity implements IsoDepTransceiver.OnMessageReceived, NfcAdapter.ReaderCallback {
-
-    /*@Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-    }*/
-    private NfcAdapter nfcAdapter;
-    private ListView listView;
-    private IsoDepAdapter isoDepAdapter;
+public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "JDR HostCardEmulation";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        listView = (ListView)findViewById(R.id.listView);
-        isoDepAdapter = new IsoDepAdapter(getLayoutInflater());
-        listView.setAdapter(isoDepAdapter);
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+
+        ActionBar toolbar = getSupportActionBar();
+        toolbar.setTitle(R.string.app_name);
+
+        Button setNdef = (Button) findViewById(R.id.set_ndef_button);
+        setNdef.setOnClickListener(new View.OnClickListener() {
+                                       @Override
+                                       public void onClick(View view) {
+
+                                           //
+                                           // Technically, if this is past our byte limit,
+                                           // it will cause issues.
+                                           //
+                                           // TODO: add validation
+                                           //
+                                           TextView getNdefString = (TextView) findViewById(R.id.ndef_text);
+                                           String test = getNdefString.getText().toString();
+
+                                           Intent intent = new Intent(view.getContext(), MyHostApduService.class);
+                                           intent.putExtra("ndefMessage", test);
+                                           startService(intent);
+                                       }
+                                   }
+        );
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    /*@Override
-    public void onResume() {
-        super.onResume();
-        IntentFilter writeTagFilters[];
-        IntentFilter tagDetected = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
-        writeTagFilters = new IntentFilter[] { tagDetected };
-
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-        if(nfcAdapter==null)
-        {
-            nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        }
-        nfcAdapter.enableForegroundDispatch(this, pendingIntent,       writeTagFilters, null);
-
-    }*/
     @Override
     public void onResume() {
         super.onResume();
-        nfcAdapter.enableReaderMode(this, this, NfcAdapter.FLAG_READER_NFC_A | NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
-                null);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onPause() {
         super.onPause();
-        nfcAdapter.disableReaderMode(this);
     }
 
-    public void onTagDiscovered(Tag tag) {
-        IsoDep isoDep = IsoDep.get(tag);
-        IsoDepTransceiver transceiver = new IsoDepTransceiver(isoDep, (IsoDepTransceiver.OnMessageReceived) this);
-        Thread thread = new Thread(transceiver);
-        thread.start();
+    @Override
+    public void onStop() {
+        super.onStop();
     }
 
-    public void onMessage(final byte[] message) {
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                isoDepAdapter.addMessage(new String(message));
-            }
-        });
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 
-    public void onError(Exception exception) {
-        onMessage(exception.getMessage().getBytes());
-    }
 }

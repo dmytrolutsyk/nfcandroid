@@ -5,5 +5,8 @@
 <string name="activity_into">Reader mode active</string>
 <string name="aiddescription">aiddescription</string>
 <string name="servicedesc">servicedesc</string>
+    <string name="set_ndef_button">set_ndef_button</string>
+    <string name="description">description</string>
+    <string name="header">header</string>
 
 </resources>
